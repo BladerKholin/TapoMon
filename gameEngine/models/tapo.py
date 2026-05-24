@@ -11,8 +11,8 @@ class TipoTapo(str, Enum):
     FUEGO   = "Fuego"
     AGUA    = "Agua"
     PLANTA  = "Planta"
-    ROCA    = "Luz"
-    ELECTRO = "Oscuridad"
+    LUZ    = "Luz"
+    OSCURIDAD = "Oscuridad"
     NORMAL  = "Normal"
 
 

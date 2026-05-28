@@ -16,6 +16,7 @@ from engine import game_engine as ge
 from ui import console_ui as ui
 from models.tapo import Tapo
 from network.sync_client import SyncClient
+from p2pEngine.battle_cli import menu_batalla
 
 
 # ------------------------------------------------------------------ #
@@ -106,6 +107,9 @@ def bucle_juego(usuario, tapo: Tapo) -> None:
         "7": ge.entrenar_resistencia,
     }
 
+    # Acción especial: combate P2P (no es un lambda de ge, se trata aparte)
+    ACCION_COMBATE = "9"
+
     last_msgs: list[str] = []
 
     def _leer_opcion_realtime() -> str:
@@ -114,7 +118,7 @@ def bucle_juego(usuario, tapo: Tapo) -> None:
 
         import msvcrt
 
-        validas = set(list(ACCIONES.keys()) + ["0", "8"])
+        validas = set(list(ACCIONES.keys()) + ["0", "8", ACCION_COMBATE])
         ultimo_tick = time.time()
 
         while True:
@@ -171,6 +175,10 @@ def bucle_juego(usuario, tapo: Tapo) -> None:
             msgs = ACCIONES[opcion](tapo)
             last_msgs = msgs
             local_db.guardar_tapo(tapo)   # persistir tras cada acción
+
+        elif opcion == ACCION_COMBATE:
+            # Entrar al menú de combate P2P
+            menu_batalla(tapo)
 
         elif opcion == "8":
             # Solo refrescar la pantalla

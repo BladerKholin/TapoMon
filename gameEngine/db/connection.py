@@ -68,7 +68,10 @@ def get_db() -> Database:
             pass
 
         _database = _client[db_name]
-        print(f"✅  Conectado a MongoDB: {MONGO_URI} / base: {MONGO_DB}")
+        try:
+            print(f"✅  Conectado a MongoDB: {MONGO_URI} / base: {MONGO_DB}")
+        except UnicodeEncodeError:
+            print(f"[OK] Conectado a MongoDB: {MONGO_URI} / base: {MONGO_DB}")
         return _database
  
     except (ConnectionFailure, ServerSelectionTimeoutError) as e:

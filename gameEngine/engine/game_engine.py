@@ -33,7 +33,7 @@ TRAIN_COSTO_ENERGIA = -10
 STAT_MIN         = 0
 STAT_MAX         = 100
 
-IDLE_SECONDS_PER_TICK = 60   # cada cuántos segundos equivale a un tick offline
+IDLE_SECONDS_PER_TICK = 1800  # cada cuántos segundos equivale a un tick offline
 
 REALTIME_SECONDS_PER_TICK = 5
 REALTIME_HAMBRE = -1

@@ -15,6 +15,13 @@ from db import local_db
 from engine import game_engine as ge
 from ui import console_ui as ui
 from models.tapo import Tapo
+from network.sync_client import SyncClient
+
+
+# ------------------------------------------------------------------ #
+#  Cliente de sincronización con el servidor central
+# ------------------------------------------------------------------ #
+sync_client = SyncClient()
 
 
 # ------------------------------------------------------------------ #
@@ -30,6 +37,19 @@ def flujo_login() -> tuple | None:
         ui.mensaje_error("Usuario o contraseña incorrectos.")
         return None
 
+    # Autenticar con el servidor central (obtiene JWT)
+    sync_client.login(username, password)
+
+    # Intentar descargar estado actualizado desde el servidor
+    if sync_client.is_connected():
+        server_state = sync_client.resume(usuario.id)
+        if server_state and server_state.get("tapo"):
+            tapo = Tapo.from_dict(server_state["tapo"])
+            local_db.guardar_tapo(tapo)
+            print("  ☁️  Estado sincronizado desde el servidor.")
+            return usuario, tapo
+
+    # Fallback: cargar desde DB local
     tapo = local_db.cargar_tapo(usuario.tapo_id)
     if tapo is None:
         ui.mensaje_error("No se encontró la mascota asociada a este usuario.")
@@ -141,6 +161,9 @@ def bucle_juego(usuario, tapo: Tapo) -> None:
             tapo.estado_sistema = False
             local_db.guardar_tapo(tapo)
             local_db.guardar_usuario(usuario)
+            # Enviar snapshot al servidor central
+            if sync_client.is_connected():
+                sync_client.upload_state(tapo)
             ui.mensaje_ok("Sesión cerrada. ¡Tu Tapo te esperará!")
             break
 

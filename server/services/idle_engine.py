@@ -22,12 +22,11 @@ Justificación:
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from server.db.mongo import get_db
 from server.config import (
     COL_MASCOTAS,
-    IDLE_TICK_INTERVAL_SECONDS,
     TICK_HAMBRE,
     TICK_ENERGIA,
     TICK_FELICIDAD,
@@ -35,6 +34,9 @@ from server.config import (
     STAT_MIN,
     STAT_MAX,
 )
+
+# Constante de balance: segundos reales que equivalen a 1 tick de degradación offline (30 minutos)
+IDLE_SECONDS_PER_TICK = 1800
 
 
 def _clamp(value: int, lo: int = STAT_MIN, hi: int = STAT_MAX) -> int:
@@ -44,8 +46,8 @@ def _clamp(value: int, lo: int = STAT_MIN, hi: int = STAT_MAX) -> int:
 
 def calcular_ticks_pendientes(last_sync_str: str) -> int:
     """
-    Calcula cuántos ticks de degradación corresponden desde la última sync.
-    Cada tick equivale a IDLE_TICK_INTERVAL_SECONDS.
+    Calcula cuántos ticks de degradación de 30 minutos corresponden desde la última sync.
+    Cada tick equivale a IDLE_SECONDS_PER_TICK (1800s).
     """
     try:
         last_sync = datetime.fromisoformat(last_sync_str)
@@ -53,7 +55,7 @@ def calcular_ticks_pendientes(last_sync_str: str) -> int:
         last_sync = datetime.now()
 
     delta_seconds = (datetime.now() - last_sync).total_seconds()
-    return max(0, int(delta_seconds // IDLE_TICK_INTERVAL_SECONDS))
+    return max(0, int(delta_seconds // IDLE_SECONDS_PER_TICK))
 
 
 def aplicar_degradacion(tapo_doc: dict, ticks: int) -> dict:
@@ -119,13 +121,20 @@ def ejecutar_idle_tick() -> int:
         # Aplicar degradación
         aplicar_degradacion(tapo_doc, ticks)
 
+        # Avanzar el Last_Sync por la cantidad exacta de ticks procesados
+        try:
+            last_sync_dt = datetime.fromisoformat(last_sync)
+        except Exception:
+            last_sync_dt = datetime.now()
+        nuevo_sync = (last_sync_dt + timedelta(seconds=ticks * IDLE_SECONDS_PER_TICK)).isoformat()
+
         # Actualizar en la base de datos
         db[COL_MASCOTAS].update_one(
             {"id_mascota": tapo_doc["id_mascota"]},
             {"$set": {
                 "Vitales":     tapo_doc["Vitales"],
                 "Estadistica": tapo_doc["Estadistica"],
-                "Last_Sync":   datetime.now().isoformat(),
+                "Last_Sync":   nuevo_sync,
             }}
         )
         procesados += 1

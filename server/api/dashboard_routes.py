@@ -95,7 +95,7 @@ async def run_seed():
 
 @router.post("/fast-forward")
 async def run_fast_forward(req: FastForwardRequest):
-    """Resta horas a Last_Sync de un Tapo para simular tiempo desconectado."""
+    """Resta horas a Last_Sync de un Tapo para simular tiempo desconectado y calcula la degradación automáticamente."""
     try:
         success = fast_forward_tapo(req.tapo_id, req.hours)
         if not success:
@@ -103,9 +103,13 @@ async def run_fast_forward(req: FastForwardRequest):
                 status_code=404,
                 detail=f"No se encontró el Tapo con ID o Nombre '{req.tapo_id}'."
             )
+        
+        # Ejecutar inmediatamente la degradación del simulador IDLE de forma automática
+        ejecutar_idle_tick()
+        
         return {
             "success": True,
-            "message": f"Viaje en el tiempo de -{req.hours} horas aplicado con éxito."
+            "message": f"Viaje en el tiempo de -{req.hours} horas aplicado y procesado automáticamente por el Simulador IDLE."
         }
     except HTTPException:
         raise

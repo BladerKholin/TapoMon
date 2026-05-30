@@ -131,6 +131,9 @@ def ejecutar_idle_tick() -> int:
         procesados += 1
 
     if procesados > 0:
-        print(f"⏰  [IDLE] Procesados {procesados} Tapo(s) en modo IDLE.")
+        try:
+            print(f"⏰  [IDLE] Procesados {procesados} Tapo(s) en modo IDLE.")
+        except UnicodeEncodeError:
+            print(f"[IDLE] Procesados {procesados} Tapo(s) en modo IDLE.")
 
     return procesados

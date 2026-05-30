@@ -23,9 +23,9 @@ from server.services.idle_engine import (
     calcular_ticks_pendientes,
     aplicar_degradacion,
     _clamp,
+    IDLE_SECONDS_PER_TICK,
 )
 from server.config import (
-    IDLE_TICK_INTERVAL_SECONDS,
     TICK_HAMBRE, TICK_ENERGIA, TICK_FELICIDAD, TICK_SALUD_BASE,
 )
 
@@ -56,14 +56,14 @@ class TestCalcularTicks:
         assert calcular_ticks_pendientes(now) == 0
 
     def test_un_tick(self):
-        """Después de 60 segundos (default), 1 tick."""
-        hace = (datetime.now() - timedelta(seconds=IDLE_TICK_INTERVAL_SECONDS + 1)).isoformat()
+        """Después de 30 minutos (default), 1 tick."""
+        hace = (datetime.now() - timedelta(seconds=IDLE_SECONDS_PER_TICK + 1)).isoformat()
         ticks = calcular_ticks_pendientes(hace)
         assert ticks >= 1
 
     def test_multiples_ticks(self):
-        """Después de 5 minutos, debería haber ~5 ticks (con intervalo de 60s)."""
-        hace = (datetime.now() - timedelta(minutes=5)).isoformat()
+        """Después de 2.5 horas, debería haber ~5 ticks (con intervalo de 30 minutos)."""
+        hace = (datetime.now() - timedelta(minutes=150)).isoformat()
         ticks = calcular_ticks_pendientes(hace)
         assert ticks >= 4  # Tolerancia de 1 por timing
 
